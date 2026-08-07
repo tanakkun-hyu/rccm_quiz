@@ -26,7 +26,7 @@
   .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:14px}
   .grid{display:flex;flex-direction:column;gap:10px}
   button{font-family:inherit;font-size:15px;padding:12px 14px;border-radius:10px;border:1px solid var(--line);
-    background:#fff;cursor:pointer;transition:.12s}
+    background:#fff;color:var(--ink);cursor:pointer;transition:.12s;-webkit-appearance:none;appearance:none}
   button:hover{border-color:var(--brand)}
   .menu-btn{display:flex;justify-content:space-between;align-items:center;text-align:left;font-weight:600}
   .menu-btn .sub{font-weight:400;color:var(--sub);font-size:13px}
@@ -40,14 +40,14 @@
   .fig{max-width:100%;border:1px solid var(--line);border-radius:8px;margin:6px 0 12px;background:#fff}
   .choices{display:flex;flex-direction:column;gap:10px}
   .choice{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border:1.5px solid var(--line);
-    border-radius:10px;background:#fff;cursor:pointer;text-align:left;width:100%}
+    border-radius:10px;background:#fff;color:var(--ink);cursor:pointer;text-align:left;width:100%}
   .choice:hover{border-color:var(--brand)}
-  .choice .num{font-weight:700;color:var(--brand);min-width:24px;font-size:16px}
+  .choice .num{font-weight:700;color:var(--ink);min-width:24px;font-size:16px}
   .choice .cbody{display:flex;flex-direction:column;gap:6px}
   .cfig{max-width:240px;width:100%;border:1px solid var(--line);border-radius:6px;background:#fff}
   .choice.correct{border-color:var(--ok);background:var(--ok-bg)}
   .choice.wrong{border-color:var(--ng);background:var(--ng-bg)}
-  .choice.disabled{cursor:default}
+  .choice.disabled{cursor:default;pointer-events:none;opacity:1;color:var(--ink)}
   .verdict{font-weight:700;font-size:16px;margin:2px 0 12px}
   .verdict.ok{color:var(--ok)} .verdict.ng{color:var(--ng)}
   .explain{padding:14px;background:#f8fafc;border:1px solid var(--line);border-radius:10px;margin-bottom:12px}
@@ -242,7 +242,7 @@
     if(picked!==undefined && S.view==="explain"){
       var ok=picked===q.answer;
       h+='<div class="card">';
-      h+='<div class="verdict '+(ok?"ok":"ng")+'">'+(ok?"正解":"不正解")+'（あなた: '+picked+' ／ 正解: '+q.answer+'）</div>';
+      h+='<div class="verdict '+(ok?"ok":"ng")+'">'+(ok?"正解":"不正解")+'（正解: '+q.answer+'）</div>';
       h+='<div class="explain"><h4>解説</h4><div>'+esc(q.explanation)+'</div>'+img(q.explanation_image)+'</div>';
       h+='<div class="nav"><button class="ghost" id="toQ">問題に戻る</button><span class="spacer"></span>';
       h+='<button class="primary" id="nextQ">'+(S.qIndex>=qs.length-1?"カテゴリーの結果へ":"次の問題へ ›")+'</button></div>';
@@ -264,7 +264,7 @@
       if(answered){ cls+=" disabled"; if(n===q.answer) cls+=" correct"; else if(n===picked) cls+=" wrong"; }
       var txt=q["choice_"+n]||""; var im=q["choice_"+n+"_image"]||"";
       var body=(txt?'<span>'+esc(txt)+'</span>':'')+img(im,"cfig");
-      h+='<button class="'+cls+'" data-n="'+n+'"'+(answered?' disabled':'')+
+      h+='<button class="'+cls+'" data-n="'+n+'"'+
          '><span class="num">'+n+'</span><span class="cbody">'+body+'</span></button>';
     });
     h+='</div>';
