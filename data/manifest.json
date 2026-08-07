@@ -1,0 +1,16 @@
+{
+  "schema_version": "2.0",
+  "exam": "RCCM",
+  "parts": [
+    {
+      "key": "q2",
+      "label": "問題2 一般知識",
+      "file": "q2.json",
+      "count": 128,
+      "section": "問題2",
+      "section_order": 1,
+      "dept": "",
+      "updated_at": "2026-08-07T00:00:00+09:00"
+    }
+  ]
+}

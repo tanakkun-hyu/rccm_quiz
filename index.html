@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>RCCM 択一問題集</title>
+<style>
+  :root{
+    --bg:#f4f6f8; --card:#fff; --ink:#1f2933; --sub:#52606d; --line:#e4e7eb;
+    --brand:#1565c0; --brand-d:#0d47a1; --ok:#2e7d32; --ok-bg:#e8f5e9;
+    --ng:#c62828; --ng-bg:#ffebee;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{font-family:"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;
+    background:var(--bg);color:var(--ink);line-height:1.7;-webkit-text-size-adjust:100%}
+  /* 氏名の透かし（抑止用・操作を邪魔しない） */
+  #wm{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;opacity:.06}
+  #wm div{position:absolute;white-space:nowrap;font-size:26px;font-weight:700;color:#000;
+    transform:rotate(-30deg)}
+  header{position:relative;z-index:1;background:var(--brand);color:#fff;padding:12px 16px}
+  header h1{font-size:17px;margin:0;font-weight:700}
+  .wrap{position:relative;z-index:1;max-width:760px;margin:0 auto;padding:16px}
+  .bar{display:flex;align-items:center;gap:10px;margin-bottom:14px;min-height:34px}
+  .crumb{font-size:13px;color:var(--sub)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:14px}
+  .grid{display:flex;flex-direction:column;gap:10px}
+  button{font-family:inherit;font-size:15px;padding:12px 14px;border-radius:10px;border:1px solid var(--line);
+    background:#fff;cursor:pointer;transition:.12s}
+  button:hover{border-color:var(--brand)}
+  .menu-btn{display:flex;justify-content:space-between;align-items:center;text-align:left;font-weight:600}
+  .menu-btn .sub{font-weight:400;color:var(--sub);font-size:13px}
+  .primary{background:var(--brand);color:#fff;border:none;font-weight:600}
+  .primary:hover{background:var(--brand-d)}
+  .ghost{background:#fff;color:var(--brand);border:1px solid var(--brand)}
+  .back{background:#eef2f7;color:var(--sub);border:none;padding:8px 12px;font-size:14px;border-radius:8px}
+  .meta{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+  .tag{font-size:12px;background:#eef2f7;color:var(--sub);padding:2px 10px;border-radius:10px}
+  .qtext{font-size:16px;font-weight:600;margin:0 0 12px}
+  .fig{max-width:100%;border:1px solid var(--line);border-radius:8px;margin:6px 0 12px;background:#fff}
+  .choices{display:flex;flex-direction:column;gap:10px}
+  .choice{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border:1.5px solid var(--line);
+    border-radius:10px;background:#fff;cursor:pointer;text-align:left;width:100%}
+  .choice:hover{border-color:var(--brand)}
+  .choice .num{font-weight:700;color:var(--brand);min-width:24px;font-size:16px}
+  .choice .cbody{display:flex;flex-direction:column;gap:6px}
+  .cfig{max-width:240px;width:100%;border:1px solid var(--line);border-radius:6px;background:#fff}
+  .choice.correct{border-color:var(--ok);background:var(--ok-bg)}
+  .choice.wrong{border-color:var(--ng);background:var(--ng-bg)}
+  .choice.disabled{cursor:default}
+  .verdict{font-weight:700;font-size:16px;margin:2px 0 12px}
+  .verdict.ok{color:var(--ok)} .verdict.ng{color:var(--ng)}
+  .explain{padding:14px;background:#f8fafc;border:1px solid var(--line);border-radius:10px;margin-bottom:12px}
+  .explain h4{margin:0 0 6px;font-size:14px;color:var(--brand-d)}
+  .nav{display:flex;gap:10px;flex-wrap:wrap}
+  .nav .spacer{flex:1}
+  .pct{font-size:40px;font-weight:800;color:var(--brand-d);margin:6px 0}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th,td{border:1px solid var(--line);padding:8px 10px;text-align:left}
+  th{background:#eef2f7}
+  .center{text-align:center}
+  .lic{position:relative;z-index:1;max-width:760px;margin:0 auto;padding:6px 16px 24px;color:var(--sub);font-size:12px}
+  .note{color:var(--sub);font-size:13px}
+  input[type=text],input[type=password]{font-size:16px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;width:100%}
+  @media(min-width:560px){ .choices .cfig{max-width:200px} }
+</style>
+</head>
+<body>
+<div id="wm"></div>
+<header><h1 id="hTitle">RCCM 択一問題集</h1></header>
+<div class="wrap"><div id="app"></div></div>
+<div class="lic" id="licBar"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ===================== ライセンス設定（配布ごとに書き換え） =====================
+     ※ 静的配布のためクライアント側の「抑止」です（ソース閲覧で回避されうる）。
+        本格的な保護はPhase 2のサーバー認証で行う前提。 */
+  var LICENSE = {
+    name: "",          // 無制限公開（氏名透かしなし）
+    accessCode: "",     // コードなし
+    expiry: ""          // 無期限
+  };
+  /* ============================================================================= */
+
+  var BASE_CANDIDATES = ["", "../"];
+  var IMG_BASE = "images/";
+  var DATA = { exam:"RCCM", parts:[] };
+  var unlocked = false;
+
+  var S = { screen:"boot", section:null, partKey:null, catName:null,
+            qIndex:0, view:"question", answers:{}, results:{} };
+
+  var app = document.getElementById("app");
+  function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g,function(c){
+    return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
+  function img(name, cls){ return name ? '<img class="'+(cls||"fig")+'" src="'+IMG_BASE+name+
+    '" alt="図" onerror="this.style.display=\'none\'">' : ""; }
+
+  /* ---------- データ読み込み ---------- */
+  function loadAll(base){
+    return fetch(base+"data/manifest.json").then(function(r){ if(!r.ok) throw 0; return r.json(); })
+      .then(function(m){
+        var parts=(m.parts||[]);
+        if(!parts.length) throw 0;
+        return Promise.all(parts.map(function(p){
+          return fetch(base+"data/"+p.file).then(function(r){ if(!r.ok) throw 0; return r.json(); })
+            .then(function(d){ return Object.assign({}, p, { questions:(d.questions||[]) }); });
+        })).then(function(list){
+          IMG_BASE=base+"images/";
+          DATA.exam=m.exam||"RCCM";
+          DATA.parts=list.sort(function(a,b){ return (a.section_order-b.section_order)||(a.key<b.key?-1:1); });
+        });
+      });
+  }
+
+  /* ---------- 集計ヘルパ ---------- */
+  function sections(){
+    var seen={}, out=[];
+    DATA.parts.forEach(function(p){ if(!seen[p.section]){ seen[p.section]=1;
+      out.push({ section:p.section, order:p.section_order }); }});
+    return out.sort(function(a,b){ return a.order-b.order; });
+  }
+  function partsInSection(sec){ return DATA.parts.filter(function(p){ return p.section===sec; }); }
+  function partByKey(k){ return DATA.parts.filter(function(p){ return p.key===k; })[0]; }
+  function categoriesOf(k){
+    var p=partByKey(k), order=[], cnt={};
+    (p.questions||[]).forEach(function(q){ if(cnt[q.category]===undefined){ cnt[q.category]=0; order.push(q.category); } cnt[q.category]++; });
+    return order.map(function(name){ return { name:name, count:cnt[name] }; });
+  }
+  function questionsOf(k, cat){ return (partByKey(k).questions||[]).filter(function(q){ return q.category===cat; }); }
+  function deptCount(sec){ return partsInSection(sec).length; }
+
+  /* ---------- ナビゲーション ---------- */
+  function go(screen){ S.screen=screen; render(); window.scrollTo(0,0); }
+
+  function openSection(sec){
+    S.section=sec; S.results={}; S.partKey=null;
+    if(sec==="問題4-2" && deptCount(sec)>1){ go("dept"); return; }
+    // 単一パート（問題2/問題4-1）または4-2が1部門のみ → カテゴリー選択へ
+    S.partKey = partsInSection(sec)[0].key; go("cats");
+  }
+  function openPart(k){ S.partKey=k; if(S.results===undefined) S.results={}; go("cats"); }
+  function startCategory(cat){ S.catName=cat; S.qIndex=0; S.view="question"; S.answers={}; go("quiz"); }
+
+  function backFromCats(){ if(S.section==="問題4-2" && deptCount(S.section)>1) go("dept"); else go("menu"); }
+
+  /* ---------- 画面描画 ---------- */
+  function render(){
+    // ライセンスゲート
+    if(S.screen==="locked"){ return renderLocked(); }
+    if(S.screen==="codegate"){ return renderCodeGate(); }
+    renderWatermark();
+    var lic=[];
+    if(LICENSE.name) lic.push("利用者: "+esc(LICENSE.name));
+    if(LICENSE.expiry) lic.push("有効期限: "+esc(LICENSE.expiry));
+    lic.push("この教材の無断複製・再配布を禁じます。");
+    document.getElementById("licBar").innerHTML = lic.join("　/　");
+
+    if(S.screen==="menu") return renderMenu();
+    if(S.screen==="dept") return renderDept();
+    if(S.screen==="cats") return renderCats();
+    if(S.screen==="quiz") return renderQuiz();
+    if(S.screen==="catresult") return renderCatResult();
+    if(S.screen==="overall") return renderOverall();
+  }
+
+  function bar(backFn, backLabel, crumb){
+    var h='<div class="bar">';
+    if(backFn) h+='<button class="back" id="backBtn">‹ '+esc(backLabel||"戻る")+'</button>';
+    if(crumb) h+='<span class="crumb">'+esc(crumb)+'</span>';
+    h+='</div>';
+    return h;
+  }
+  function wireBack(fn){ var b=document.getElementById("backBtn"); if(b) b.onclick=fn; }
+
+  function renderMenu(){
+    document.getElementById("hTitle").textContent = DATA.exam+" 択一問題集";
+    var secs=sections();
+    var h=bar(null,null,"メインメニュー");
+    h+='<div class="card"><div class="note" style="margin-bottom:10px">学習する問題を選んでください。</div><div class="grid">';
+    secs.forEach(function(s){
+      var ps=partsInSection(s.section);
+      var subtxt = s.section==="問題4-2" ? (ps.length===1? ps[0].dept : ps.length+"部門") : (ps[0].dept||"共通");
+      h+='<button class="menu-btn" data-sec="'+esc(s.section)+'"><span>'+esc(s.section)+
+         '</span><span class="sub">'+esc(subtxt)+' ›</span></button>';
+    });
+    h+='</div></div>';
+    app.innerHTML=h;
+    Array.prototype.forEach.call(app.querySelectorAll("[data-sec]"),function(b){
+      b.onclick=function(){ openSection(b.getAttribute("data-sec")); };
+    });
+  }
+
+  function renderDept(){
+    var ps=partsInSection(S.section);
+    var h=bar(function(){ go("menu"); },"メニュー",S.section+" › 部門選択");
+    h+='<div class="card"><div class="grid">';
+    ps.forEach(function(p){
+      h+='<button class="menu-btn" data-k="'+esc(p.key)+'"><span>'+esc(p.dept||p.label)+
+         '</span><span class="sub">'+ (p.questions?p.questions.length:0) +'問 ›</span></button>';
+    });
+    h+='</div></div>';
+    app.innerHTML=h; wireBack(function(){ go("menu"); });
+    Array.prototype.forEach.call(app.querySelectorAll("[data-k]"),function(b){
+      b.onclick=function(){ openPart(b.getAttribute("data-k")); };
+    });
+  }
+
+  function renderCats(){
+    var p=partByKey(S.partKey), cats=categoriesOf(S.partKey);
+    var crumb=S.section+(p.dept? " ("+p.dept+")":"")+" › カテゴリー選択";
+    var h=bar(backFromCats,"戻る",crumb);
+    h+='<div class="card"><div class="grid">';
+    cats.forEach(function(c){
+      var done=S.results[c.name];
+      var badge = done? '正答率 '+Math.round(done.correct/done.total*100)+'%' : c.count+'問';
+      h+='<button class="menu-btn" data-cat="'+esc(c.name)+'"><span>'+esc(c.name)+
+         '</span><span class="sub">'+esc(badge)+' ›</span></button>';
+    });
+    h+='</div>';
+    var allDone = cats.length>0 && cats.every(function(c){ return S.results[c.name]; });
+    if(allDone) h+='<button class="primary" id="overBtn" style="margin-top:12px;width:100%">総合結果を見る</button>';
+    h+='</div>';
+    app.innerHTML=h; wireBack(backFromCats);
+    if(allDone) document.getElementById("overBtn").onclick=function(){ go("overall"); };
+    Array.prototype.forEach.call(app.querySelectorAll("[data-cat]"),function(b){
+      b.onclick=function(){ startCategory(b.getAttribute("data-cat")); };
+    });
+  }
+
+  function renderQuiz(){
+    var qs=questionsOf(S.partKey, S.catName), q=qs[S.qIndex];
+    var picked=S.answers[S.qIndex];
+    var p=partByKey(S.partKey);
+    var crumb=S.section+(p.dept?" ("+p.dept+")":"")+" › "+S.catName+"　"+(S.qIndex+1)+"/"+qs.length;
+    var h=bar(function(){ go("cats"); },"カテゴリー一覧",crumb);
+
+    // 解説ビュー
+    if(picked!==undefined && S.view==="explain"){
+      var ok=picked===q.answer;
+      h+='<div class="card">';
+      h+='<div class="verdict '+(ok?"ok":"ng")+'">'+(ok?"正解":"不正解")+'（あなた: '+picked+' ／ 正解: '+q.answer+'）</div>';
+      h+='<div class="explain"><h4>解説</h4><div>'+esc(q.explanation)+'</div>'+img(q.explanation_image)+'</div>';
+      h+='<div class="nav"><button class="ghost" id="toQ">問題に戻る</button><span class="spacer"></span>';
+      h+='<button class="primary" id="nextQ">'+(S.qIndex>=qs.length-1?"カテゴリーの結果へ":"次の問題へ ›")+'</button></div>';
+      h+='</div>';
+      app.innerHTML=h; wireBack(function(){ go("cats"); });
+      document.getElementById("toQ").onclick=function(){ S.view="question"; render(); };
+      document.getElementById("nextQ").onclick=function(){
+        if(S.qIndex>=qs.length-1){ finishCategory(qs); } else { S.qIndex++; S.view="question"; render(); window.scrollTo(0,0); }
+      };
+      return;
+    }
+
+    // 問題ビュー（未解答＝選択可能／解答済＝見直し）
+    h+='<div class="card">';
+    h+='<p class="qtext">'+esc(q.question)+'</p>'+img(q.question_image);
+    h+='<div class="choices">';
+    [1,2,3,4].forEach(function(n){
+      var cls="choice"; var answered=(picked!==undefined);
+      if(answered){ cls+=" disabled"; if(n===q.answer) cls+=" correct"; else if(n===picked) cls+=" wrong"; }
+      var txt=q["choice_"+n]||""; var im=q["choice_"+n+"_image"]||"";
+      var body=(txt?'<span>'+esc(txt)+'</span>':'')+img(im,"cfig");
+      h+='<button class="'+cls+'" data-n="'+n+'"'+(answered?' disabled':'')+
+         '><span class="num">'+n+'</span><span class="cbody">'+body+'</span></button>';
+    });
+    h+='</div>';
+    if(picked!==undefined){
+      h+='<div class="nav" style="margin-top:14px"><span class="spacer"></span>'+
+         '<button class="primary" id="toE">解答解説に戻る</button></div>';
+    }
+    h+='</div>';
+    app.innerHTML=h; wireBack(function(){ go("cats"); });
+    if(picked===undefined){
+      Array.prototype.forEach.call(app.querySelectorAll(".choice"),function(b){
+        b.onclick=function(){ S.answers[S.qIndex]=parseInt(b.getAttribute("data-n"),10); S.view="explain"; render(); window.scrollTo(0,0); };
+      });
+    } else {
+      document.getElementById("toE").onclick=function(){ S.view="explain"; render(); };
+    }
+  }
+
+  function finishCategory(qs){
+    var correct=0;
+    qs.forEach(function(q,i){ if(S.answers[i]===q.answer) correct++; });
+    S.results[S.catName]={ correct:correct, total:qs.length };
+    go("catresult");
+  }
+
+  function renderCatResult(){
+    var res=S.results[S.catName], pct=Math.round(res.correct/res.total*100);
+    var cats=categoriesOf(S.partKey);
+    var nextCat=cats.filter(function(c){ return !S.results[c.name]; })[0];
+    var allDone=cats.every(function(c){ return S.results[c.name]; });
+    var h=bar(function(){ go("cats"); },"カテゴリー一覧",S.catName+" の結果");
+    h+='<div class="card center">';
+    h+='<div class="note">'+esc(S.catName)+' の正答率</div>';
+    h+='<div class="pct">'+pct+'%</div>';
+    h+='<div class="note">'+res.correct+' / '+res.total+' 問正解</div>';
+    h+='<div class="nav" style="margin-top:16px;justify-content:center">';
+    if(nextCat) h+='<button class="primary" id="nextCat">次のカテゴリーへ ›</button>';
+    if(allDone) h+='<button class="primary" id="toOverall">総合結果を見る ›</button>';
+    h+='<button class="ghost" id="toCats">カテゴリー一覧へ</button>';
+    h+='</div></div>';
+    app.innerHTML=h; wireBack(function(){ go("cats"); });
+    if(nextCat) document.getElementById("nextCat").onclick=function(){ startCategory(nextCat.name); };
+    if(allDone) document.getElementById("toOverall").onclick=function(){ go("overall"); };
+    document.getElementById("toCats").onclick=function(){ go("cats"); };
+  }
+
+  function renderOverall(){
+    var p=partByKey(S.partKey), cats=categoriesOf(S.partKey);
+    var tc=0, tt=0;
+    var rows=cats.map(function(c){
+      var r=S.results[c.name]||{correct:0,total:c.count};
+      tc+=r.correct; tt+=r.total;
+      var pct=Math.round(r.correct/r.total*100);
+      return '<tr><td>'+esc(c.name)+'</td><td class="center">'+r.correct+' / '+r.total+
+             '</td><td class="center">'+pct+'%</td></tr>';
+    }).join("");
+    var totpct = tt? Math.round(tc/tt*100):0;
+    var h=bar(function(){ go("cats"); },"カテゴリー一覧",(S.section)+(p.dept?" ("+p.dept+")":"")+" › 総合結果");
+    h+='<div class="card">';
+    h+='<div class="center"><div class="note">全体の正答率</div><div class="pct">'+totpct+'%</div>'+
+       '<div class="note">'+tc+' / '+tt+' 問正解</div></div>';
+    h+='<table style="margin-top:14px"><tr><th>カテゴリー</th><th class="center">正解</th><th class="center">正答率</th></tr>'+rows+
+       '<tr><th>合計</th><th class="center">'+tc+' / '+tt+'</th><th class="center">'+totpct+'%</th></tr></table>';
+    h+='<button class="primary" id="home" style="margin-top:16px;width:100%">最初の画面に戻る</button>';
+    h+='</div>';
+    app.innerHTML=h; wireBack(function(){ go("cats"); });
+    document.getElementById("home").onclick=function(){
+      S.section=null; S.partKey=null; S.catName=null; S.results={}; go("menu");
+    };
+  }
+
+  /* ---------- ライセンス ---------- */
+  function renderWatermark(){
+    var wm=document.getElementById("wm");
+    if(wm.dataset.done) return;
+    var name=LICENSE.name||"";
+    if(!name){ return; }
+    var h="";
+    for(var y=-100;y<1400;y+=140){ for(var x=-100;x<1400;x+=360){
+      h+='<div style="top:'+y+'px;left:'+x+'px">'+esc(name)+'</div>';
+    }}
+    wm.innerHTML=h; wm.dataset.done="1";
+  }
+  function renderLocked(){
+    document.getElementById("licBar").innerHTML="";
+    app.innerHTML='<div class="card center"><h2 style="color:var(--ng)">利用期限が切れています</h2>'+
+      '<p class="note">この教材の有効期限（'+esc(LICENSE.expiry)+'）を過ぎています。継続利用をご希望の場合は提供元にお問い合わせください。</p></div>';
+  }
+  function renderCodeGate(){
+    document.getElementById("licBar").innerHTML="";
+    app.innerHTML='<div class="card"><h3>アクセスコードの入力</h3>'+
+      '<p class="note">配布時にお伝えしたアクセスコードを入力してください。</p>'+
+      '<input type="password" id="code" placeholder="アクセスコード" autocomplete="off">'+
+      '<div id="cerr" class="note" style="color:var(--ng);min-height:18px;margin-top:6px"></div>'+
+      '<button class="primary" id="enter" style="width:100%">開始する</button></div>';
+    var inp=document.getElementById("code");
+    function submit(){
+      if(inp.value===LICENSE.accessCode){ unlocked=true; go("menu"); }
+      else document.getElementById("cerr").textContent="コードが違います。";
+    }
+    document.getElementById("enter").onclick=submit;
+    inp.addEventListener("keydown",function(e){ if(e.key==="Enter") submit(); });
+    inp.focus();
+  }
+  function gate(){
+    if(LICENSE.expiry){
+      var today=new Date(); today.setHours(0,0,0,0);
+      var exp=new Date(LICENSE.expiry+"T23:59:59");
+      if(!isNaN(exp.getTime()) && today>exp){ go("locked"); return; }
+    }
+    if(LICENSE.accessCode && !unlocked){ go("codegate"); return; }
+    go("menu");
+  }
+
+  /* ---------- 起動 ---------- */
+  app.innerHTML='<div class="card note">読み込み中…</div>';
+  (function tryLoad(k){
+    if(k>=BASE_CANDIDATES.length){
+      app.innerHTML='<div class="card note">データを読み込めませんでした。ローカルの file:// で開いている場合は、'+
+        'ローカルサーバー配信またはGitHub Pagesでご利用ください。</div>'; return;
+    }
+    loadAll(BASE_CANDIDATES[k]).then(gate).catch(function(){ tryLoad(k+1); });
+  })(0);
+})();
+</script>
+</body>
+</html>
