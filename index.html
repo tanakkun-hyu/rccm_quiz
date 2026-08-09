@@ -6,62 +6,67 @@
 <title>RCCM 択一問題集</title>
 <style>
   :root{
+    /* ===== 表示設定（基本はここ2つだけ変えればOK） ===== */
+    --font:"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif; /* 書体 */
+    --fs:16px;   /* 文字の基本サイズ。ここを17px/18pxにすると全体が比例して拡大 */
+    /* ================================================= */
     --bg:#f4f6f8; --card:#fff; --ink:#1f2933; --sub:#52606d; --line:#e4e7eb;
     --brand:#1565c0; --brand-d:#0d47a1; --ok:#2e7d32; --ok-bg:#e8f5e9;
     --ng:#c62828; --ng-bg:#ffebee;
   }
   *{box-sizing:border-box}
   html,body{margin:0}
-  body{font-family:"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;
+  html{font-size:var(--fs)}
+  body{font-family:var(--font);font-size:1rem;
     background:var(--bg);color:var(--ink);line-height:1.7;-webkit-text-size-adjust:100%}
   /* 氏名の透かし（抑止用・操作を邪魔しない） */
   #wm{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;opacity:.06}
   #wm div{position:absolute;white-space:nowrap;font-size:26px;font-weight:700;color:#000;
     transform:rotate(-30deg)}
   header{position:relative;z-index:1;background:var(--brand);color:#fff;padding:12px 16px}
-  header h1{font-size:17px;margin:0;font-weight:700}
+  header h1{font-size:1.06rem;margin:0;font-weight:700}
   .wrap{position:relative;z-index:1;max-width:760px;margin:0 auto;padding:16px}
   .bar{display:flex;align-items:center;gap:10px;margin-bottom:14px;min-height:34px}
-  .crumb{font-size:13px;color:var(--sub)}
+  .crumb{font-size:0.82rem;color:var(--sub)}
   .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:14px}
   .grid{display:flex;flex-direction:column;gap:10px}
-  button{font-family:inherit;font-size:15px;padding:12px 14px;border-radius:10px;border:1px solid var(--line);
+  button{font-family:inherit;font-size:0.94rem;padding:12px 14px;border-radius:10px;border:1px solid var(--line);
     background:#fff;color:var(--ink);cursor:pointer;transition:.12s;-webkit-appearance:none;appearance:none}
   button:hover{border-color:var(--brand)}
   .menu-btn{display:flex;justify-content:space-between;align-items:center;text-align:left;font-weight:600}
-  .menu-btn .sub{font-weight:400;color:var(--sub);font-size:13px}
+  .menu-btn .sub{font-weight:400;color:var(--sub);font-size:0.82rem}
   .primary{background:var(--brand);color:#fff;border:none;font-weight:600}
   .primary:hover{background:var(--brand-d)}
   .ghost{background:#fff;color:var(--brand);border:1px solid var(--brand)}
-  .back{background:#eef2f7;color:var(--sub);border:none;padding:8px 12px;font-size:14px;border-radius:8px}
+  .back{background:#eef2f7;color:var(--sub);border:none;padding:8px 12px;font-size:0.88rem;border-radius:8px}
   .meta{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
-  .tag{font-size:12px;background:#eef2f7;color:var(--sub);padding:2px 10px;border-radius:10px}
-  .qtext{font-size:16px;font-weight:600;margin:0 0 12px}
+  .tag{font-size:0.75rem;background:#eef2f7;color:var(--sub);padding:2px 10px;border-radius:10px}
+  .qtext{font-size:1rem;font-weight:600;margin:0 0 12px}
   .fig{max-width:100%;border:1px solid var(--line);border-radius:8px;margin:6px 0 12px;background:#fff}
   .choices{display:flex;flex-direction:column;gap:10px}
   .choice{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border:1.5px solid var(--line);
     border-radius:10px;background:#fff;color:var(--ink);cursor:pointer;text-align:left;width:100%}
   .choice:hover{border-color:var(--brand)}
-  .choice .num{font-weight:700;color:var(--ink);min-width:24px;font-size:16px}
+  .choice .num{font-weight:700;color:var(--ink);min-width:24px;font-size:1rem}
   .choice .cbody{display:flex;flex-direction:column;gap:6px}
   .cfig{max-width:240px;width:100%;border:1px solid var(--line);border-radius:6px;background:#fff}
   .choice.correct{border-color:var(--ok);background:var(--ok-bg)}
   .choice.wrong{border-color:var(--ng);background:var(--ng-bg)}
   .choice.disabled{cursor:default;pointer-events:none;opacity:1;color:var(--ink)}
-  .verdict{font-weight:700;font-size:16px;margin:2px 0 12px}
+  .verdict{font-weight:700;font-size:1rem;margin:2px 0 12px}
   .verdict.ok{color:var(--ok)} .verdict.ng{color:var(--ng)}
   .explain{padding:14px;background:#f8fafc;border:1px solid var(--line);border-radius:10px;margin-bottom:12px}
-  .explain h4{margin:0 0 6px;font-size:14px;color:var(--brand-d)}
+  .explain h4{margin:0 0 6px;font-size:0.88rem;color:var(--brand-d)}
   .nav{display:flex;gap:10px;flex-wrap:wrap}
   .nav .spacer{flex:1}
-  .pct{font-size:40px;font-weight:800;color:var(--brand-d);margin:6px 0}
-  table{width:100%;border-collapse:collapse;font-size:14px}
+  .pct{font-size:2.5rem;font-weight:800;color:var(--brand-d);margin:6px 0}
+  table{width:100%;border-collapse:collapse;font-size:0.88rem}
   th,td{border:1px solid var(--line);padding:8px 10px;text-align:left}
   th{background:#eef2f7}
   .center{text-align:center}
-  .lic{position:relative;z-index:1;max-width:760px;margin:0 auto;padding:6px 16px 24px;color:var(--sub);font-size:12px}
-  .note{color:var(--sub);font-size:13px}
-  input[type=text],input[type=password]{font-size:16px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;width:100%}
+  .lic{position:relative;z-index:1;max-width:760px;margin:0 auto;padding:6px 16px 24px;color:var(--sub);font-size:0.75rem}
+  .note{color:var(--sub);font-size:0.82rem}
+  input[type=text],input[type=password]{font-size:1rem;padding:10px 12px;border:1px solid var(--line);border-radius:8px;width:100%}
   @media(min-width:560px){ .choices .cfig{max-width:200px} }
 </style>
 </head>
