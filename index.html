@@ -8,7 +8,7 @@
   :root{
     /* ===== 表示設定（基本はここ2つだけ変えればOK） ===== */
     --font:"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif; /* 書体 */
-    --fs:18px;   /* 文字の基本サイズ。ここを17px/18pxにすると全体が比例して拡大 */
+    --fs:16px;   /* 文字の基本サイズ。ここを17px/18pxにすると全体が比例して拡大 */
     /* ================================================= */
     --bg:#f4f6f8; --card:#fff; --ink:#1f2933; --sub:#52606d; --line:#e4e7eb;
     --brand:#1565c0; --brand-d:#0d47a1; --ok:#2e7d32; --ok-bg:#e8f5e9;
@@ -41,7 +41,7 @@
   .back{background:#eef2f7;color:var(--sub);border:none;padding:8px 12px;font-size:0.88rem;border-radius:8px}
   .meta{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
   .tag{font-size:0.75rem;background:#eef2f7;color:var(--sub);padding:2px 10px;border-radius:10px}
-  .qtext{font-size:1rem;font-weight:600;margin:0 0 12px}
+  .qtext{font-size:1rem;font-weight:600;margin:0 0 12px;white-space:pre-wrap}
   .fig{max-width:100%;border:1px solid var(--line);border-radius:8px;margin:6px 0 12px;background:#fff}
   .choices{display:flex;flex-direction:column;gap:10px}
   .choice{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border:1.5px solid var(--line);
@@ -57,6 +57,7 @@
   .verdict.ok{color:var(--ok)} .verdict.ng{color:var(--ng)}
   .explain{padding:14px;background:#f8fafc;border:1px solid var(--line);border-radius:10px;margin-bottom:12px}
   .explain h4{margin:0 0 6px;font-size:0.88rem;color:var(--brand-d)}
+  .exp-body{white-space:pre-wrap}
   .nav{display:flex;gap:10px;flex-wrap:wrap}
   .nav .spacer{flex:1}
   .pct{font-size:2.5rem;font-weight:800;color:var(--brand-d);margin:6px 0}
@@ -84,9 +85,9 @@
      ※ 静的配布のためクライアント側の「抑止」です（ソース閲覧で回避されうる）。
         本格的な保護はPhase 2のサーバー認証で行う前提。 */
   var LICENSE = {
-    name: "",          // 無制限公開（氏名透かしなし）
-    accessCode: "",     // コードなし
-    expiry: ""          // 無期限
+    name: "",
+    accessCode: "",
+    expiry: ""
   };
   /* ============================================================================= */
 
@@ -248,7 +249,7 @@
       var ok=picked===q.answer;
       h+='<div class="card">';
       h+='<div class="verdict '+(ok?"ok":"ng")+'">'+(ok?"正解":"不正解")+'（正解: '+q.answer+'）</div>';
-      h+='<div class="explain"><h4>解説</h4><div>'+esc(q.explanation)+'</div>'+img(q.explanation_image)+'</div>';
+      h+='<div class="explain"><h4>解説</h4><div class="exp-body">'+esc(q.explanation)+'</div>'+img(q.explanation_image)+'</div>';
       h+='<div class="nav"><button class="ghost" id="toQ">問題に戻る</button><span class="spacer"></span>';
       h+='<button class="primary" id="nextQ">'+(S.qIndex>=qs.length-1?"カテゴリーの結果へ":"次の問題へ ›")+'</button></div>';
       h+='</div>';
