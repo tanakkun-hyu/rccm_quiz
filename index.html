@@ -104,6 +104,7 @@
     return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
   function img(name, cls){ return name ? '<img class="'+(cls||"fig")+'" src="'+IMG_BASE+name+
     '" alt="図" onerror="this.style.display=\'none\'">' : ""; }
+  function ltr(n){ return "abcd".charAt(n-1) || String(n); }  // 1〜4 → a〜d（表示用）
 
   /* ---------- データ読み込み ---------- */
   function loadAll(base){
@@ -248,7 +249,7 @@
     if(picked!==undefined && S.view==="explain"){
       var ok=picked===q.answer;
       h+='<div class="card">';
-      h+='<div class="verdict '+(ok?"ok":"ng")+'">'+(ok?"正解":"不正解")+'（正解: '+q.answer+'）</div>';
+      h+='<div class="verdict '+(ok?"ok":"ng")+'">'+(ok?"正解":"不正解")+'（正解: '+ltr(q.answer)+'）</div>';
       h+='<div class="explain"><h4>解説</h4><div class="exp-body">'+esc(q.explanation)+'</div>'+img(q.explanation_image)+'</div>';
       h+='<div class="nav"><button class="ghost" id="toQ">問題に戻る</button><span class="spacer"></span>';
       h+='<button class="primary" id="nextQ">'+(S.qIndex>=qs.length-1?"カテゴリーの結果へ":"次の問題へ ›")+'</button></div>';
@@ -271,7 +272,7 @@
       var txt=q["choice_"+n]||""; var im=q["choice_"+n+"_image"]||"";
       var body=(txt?'<span>'+esc(txt)+'</span>':'')+img(im,"cfig");
       h+='<button class="'+cls+'" data-n="'+n+'"'+
-         '><span class="num">'+n+'</span><span class="cbody">'+body+'</span></button>';
+         '><span class="num">'+ltr(n)+'.</span><span class="cbody">'+body+'</span></button>';
     });
     h+='</div>';
     if(picked!==undefined){
