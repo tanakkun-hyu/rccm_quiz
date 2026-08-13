@@ -23,8 +23,14 @@
   #wm{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;opacity:.06}
   #wm div{position:absolute;white-space:nowrap;font-size:26px;font-weight:700;color:#000;
     transform:rotate(-30deg)}
-  header{position:relative;z-index:1;background:var(--brand);color:#fff;padding:12px 16px}
+  header{position:relative;z-index:1;background:var(--brand);color:#fff;padding:12px 16px;
+    display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
   header h1{font-size:1.06rem;margin:0;font-weight:700}
+  .fsctl{display:flex;gap:6px;flex:none}
+  .fsctl button{padding:4px 9px;font-size:13px;line-height:1.2;border-radius:8px;
+    border:1px solid rgba(255,255,255,.6);background:rgba(255,255,255,.14);color:#fff;-webkit-appearance:none}
+  .fsctl button:active{background:rgba(255,255,255,.30)}
+  .fsctl #fsPlus{font-size:15px}
   .wrap{position:relative;z-index:1;max-width:760px;margin:0 auto;padding:16px}
   .bar{display:flex;align-items:center;gap:10px;margin-bottom:14px;min-height:34px}
   .crumb{font-size:0.82rem;color:var(--sub)}
@@ -34,6 +40,12 @@
     background:#fff;color:var(--ink);cursor:pointer;transition:.12s;-webkit-appearance:none;appearance:none}
   button:hover{border-color:var(--brand)}
   .menu-btn{display:flex;justify-content:space-between;align-items:center;text-align:left;font-weight:600}
+  .catrow{display:grid;grid-template-columns:1fr auto 3.1em 3.1em 3.1em;gap:6px;align-items:center;
+    width:100%;text-align:left;padding:11px 12px}
+  .catrow .cname{font-weight:600}
+  .catrow .ccount{color:var(--sub);font-size:0.82rem;justify-self:end;white-space:nowrap}
+  .catrow .acc{justify-self:end;font-size:0.9rem;font-variant-numeric:tabular-nums}
+  .catrow .acc.empty{color:var(--line)}
   .menu-btn .sub{font-weight:400;color:var(--sub);font-size:0.82rem}
   .primary{background:var(--brand);color:#fff;border:none;font-weight:600}
   .primary:hover{background:var(--brand-d)}
@@ -73,9 +85,32 @@
 </head>
 <body>
 <div id="wm"></div>
-<header><h1 id="hTitle">RCCM 択一問題集</h1></header>
+<header>
+  <h1 id="hTitle">RCCM 択一問題集</h1>
+  <div class="fsctl">
+    <button id="fsMinus" type="button" aria-label="文字を小さく">A−</button>
+    <button id="fsReset" type="button" aria-label="文字サイズを標準に">標準</button>
+    <button id="fsPlus" type="button" aria-label="文字を大きく">A＋</button>
+  </div>
+</header>
 <div class="wrap"><div id="app"></div></div>
 <div class="lic" id="licBar"></div>
+
+<script>
+/* 文字サイズ調整（A−/A＋/標準）。--fs を変え、端末に保存。全画面に反映。 */
+(function(){
+  var root=document.documentElement, MIN=13, MAX=26, KEY="rccm_fs";
+  var DEFAULT=(getComputedStyle(root).getPropertyValue('--fs')||'16px').trim();
+  function cur(){ var v=parseInt(getComputedStyle(root).getPropertyValue('--fs'),10); return isNaN(v)?16:v; }
+  function set(px, save){ px=Math.max(MIN,Math.min(MAX,px)); root.style.setProperty('--fs',px+'px');
+    if(save){ try{ localStorage.setItem(KEY,px+'px'); }catch(e){} } }
+  try{ var s=localStorage.getItem(KEY); if(s) root.style.setProperty('--fs',s); }catch(e){}
+  var mi=document.getElementById('fsMinus'), pl=document.getElementById('fsPlus'), rs=document.getElementById('fsReset');
+  if(mi) mi.onclick=function(){ set(cur()-1,true); };
+  if(pl) pl.onclick=function(){ set(cur()+1,true); };
+  if(rs) rs.onclick=function(){ root.style.setProperty('--fs',DEFAULT); try{ localStorage.removeItem(KEY); }catch(e){} };
+})();
+</script>
 
 <script>
 (function(){
@@ -216,16 +251,35 @@
     });
   }
 
+  /* ---- 正答率の履歴（直近3回・端末に保存） ---- */
+  var HKEY="rccm_hist";
+  function histAll(){ try{ return JSON.parse(localStorage.getItem(HKEY)||"{}"); }catch(e){ return {}; } }
+  function histGet(part,cat){ var a=histAll(); return (a[part]&&a[part][cat])||[]; }
+  function histPush(part,cat,pct){
+    var a=histAll(); a[part]=a[part]||{}; var arr=a[part][cat]||[];
+    arr.push(pct); if(arr.length>3) arr=arr.slice(arr.length-3);
+    a[part][cat]=arr; try{ localStorage.setItem(HKEY,JSON.stringify(a)); }catch(e){}
+  }
+  function accColor(pct){ return pct<60 ? 'var(--ng)' : (pct<75 ? 'var(--brand)' : 'var(--ink)'); }
+
   function renderCats(){
     var p=partByKey(S.partKey), cats=categoriesOf(S.partKey);
     var crumb=S.section+(p.dept? " ("+p.dept+")":"")+" › カテゴリー選択";
     var h=bar(backFromCats,"戻る",crumb);
-    h+='<div class="card"><div class="grid">';
+    h+='<div class="card">';
+    h+='<div class="note" style="margin-bottom:8px">各カテゴリーの直近3回の正答率（右端が最新）</div>';
+    h+='<div class="grid">';
     cats.forEach(function(c){
-      var done=S.results[c.name];
-      var badge = done? '正答率 '+Math.round(done.correct/done.total*100)+'%' : c.count+'問';
-      h+='<button class="menu-btn" data-cat="'+esc(c.name)+'"><span>'+esc(c.name)+
-         '</span><span class="sub">'+esc(badge)+' ›</span></button>';
+      var hist=histGet(S.partKey,c.name), cells=['','',''];
+      for(var i=0;i<hist.length&&i<3;i++){ cells[2-i]=hist[hist.length-1-i]; }
+      var accHtml=cells.map(function(v){
+        if(v===''||v===undefined) return '<span class="acc empty">—</span>';
+        return '<span class="acc" style="color:'+accColor(v)+(v>=75?';font-weight:700':'')+'">'+v+'%</span>';
+      }).join('');
+      h+='<button class="catrow" data-cat="'+esc(c.name)+'">'+
+           '<span class="cname">'+esc(c.name)+'</span>'+
+           '<span class="ccount">'+c.count+'問</span>'+accHtml+
+         '</button>';
     });
     h+='</div>';
     var allDone = cats.length>0 && cats.every(function(c){ return S.results[c.name]; });
@@ -245,20 +299,30 @@
     var crumb=S.section+(p.dept?" ("+p.dept+")":"")+" › "+S.catName+"　"+(S.qIndex+1)+"/"+qs.length;
     var h=bar(function(){ go("cats"); },"カテゴリー一覧",crumb);
 
-    // 解説ビュー
+    // 前の問題へ移動（解答済みなら解答解説を表示）
+    function gotoPrev(){
+      if(S.qIndex>0){ S.qIndex--; S.view=(S.answers[S.qIndex]!==undefined)?"explain":"question"; render(); window.scrollTo(0,0); }
+    }
+    // 次の問題へ移動（最後なら結果へ）
+    function gotoNext(){
+      if(S.qIndex>=qs.length-1){ finishCategory(qs); }
+      else { S.qIndex++; S.view=(S.answers[S.qIndex]!==undefined)?"explain":"question"; render(); window.scrollTo(0,0); }
+    }
+    var prevHtml='<button class="ghost" id="prevQ"'+(S.qIndex===0?' disabled style="opacity:.4"':'')+'>‹ 前の問題</button>';
+
+    // 解説ビュー（解答済み）
     if(picked!==undefined && S.view==="explain"){
       var ok=picked===q.answer;
       h+='<div class="card">';
       h+='<div class="verdict '+(ok?"ok":"ng")+'">'+(ok?"正解":"不正解")+'（正解: '+ltr(q.answer)+'）</div>';
       h+='<div class="explain"><h4>解説</h4><div class="exp-body">'+esc(q.explanation)+'</div>'+img(q.explanation_image)+'</div>';
-      h+='<div class="nav"><button class="ghost" id="toQ">問題に戻る</button><span class="spacer"></span>';
+      h+='<div class="nav">'+prevHtml+'<button class="ghost" id="toQ">問題に戻る</button><span class="spacer"></span>';
       h+='<button class="primary" id="nextQ">'+(S.qIndex>=qs.length-1?"カテゴリーの結果へ":"次の問題へ ›")+'</button></div>';
       h+='</div>';
       app.innerHTML=h; wireBack(function(){ go("cats"); });
       document.getElementById("toQ").onclick=function(){ S.view="question"; render(); };
-      document.getElementById("nextQ").onclick=function(){
-        if(S.qIndex>=qs.length-1){ finishCategory(qs); } else { S.qIndex++; S.view="question"; render(); window.scrollTo(0,0); }
-      };
+      document.getElementById("prevQ").onclick=gotoPrev;
+      document.getElementById("nextQ").onclick=gotoNext;
       return;
     }
 
@@ -275,18 +339,22 @@
          '><span class="num">'+ltr(n)+'.</span><span class="cbody">'+body+'</span></button>';
     });
     h+='</div>';
+    h+='<div class="nav" style="margin-top:14px">'+prevHtml+'<span class="spacer"></span>';
     if(picked!==undefined){
-      h+='<div class="nav" style="margin-top:14px"><span class="spacer"></span>'+
-         '<button class="primary" id="toE">解答解説に戻る</button></div>';
+      h+='<button class="ghost" id="toE">解答解説を見る</button>';
+      h+='<button class="primary" id="nextQ2">'+(S.qIndex>=qs.length-1?"カテゴリーの結果へ":"次の問題へ ›")+'</button>';
     }
     h+='</div>';
+    h+='</div>';
     app.innerHTML=h; wireBack(function(){ go("cats"); });
+    document.getElementById("prevQ").onclick=gotoPrev;
     if(picked===undefined){
       Array.prototype.forEach.call(app.querySelectorAll(".choice"),function(b){
         b.onclick=function(){ S.answers[S.qIndex]=parseInt(b.getAttribute("data-n"),10); S.view="explain"; render(); window.scrollTo(0,0); };
       });
     } else {
       document.getElementById("toE").onclick=function(){ S.view="explain"; render(); };
+      document.getElementById("nextQ2").onclick=gotoNext;
     }
   }
 
@@ -294,6 +362,7 @@
     var correct=0;
     qs.forEach(function(q,i){ if(S.answers[i]===q.answer) correct++; });
     S.results[S.catName]={ correct:correct, total:qs.length };
+    histPush(S.partKey, S.catName, Math.round(correct/qs.length*100));
     go("catresult");
   }
 
